@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Plus, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Printer } from 'lucide-react';
 import { TextSection } from '@/components/sections/TextSection';
 import { ImageSection } from '@/components/sections/ImageSection';
+import { DocumentPreview } from '@/components/DocumentPreview';
 import { Section, TextSection as TextSectionType, ImageSection as ImageSectionType } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -91,6 +92,10 @@ export default function Editor() {
               <span className="text-sm text-muted-foreground">
                 Largura: {document.width}mm
               </span>
+              <Button variant="outline" onClick={() => navigate(`/print/${document.id}`)}>
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimir
+              </Button>
               <Button variant="outline" onClick={() => toast({ title: "Salvo!", description: "Alterações salvas automaticamente" })}>
                 <Save className="h-4 w-4 mr-2" />
                 Auto-salvo
@@ -101,50 +106,56 @@ export default function Editor() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex gap-2 mb-6">
-            <Select onValueChange={(value) => handleAddSection(value as 'text' | 'image')}>
-              <SelectTrigger className="w-[200px]">
-                <Plus className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Adicionar seção" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Seção de Texto</SelectItem>
-                <SelectItem value="image">Seção de Imagem</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          <div className="space-y-6">
+            <div className="flex gap-2 mb-6">
+              <Select onValueChange={(value) => handleAddSection(value as 'text' | 'image')}>
+                <SelectTrigger className="w-[200px]">
+                  <Plus className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Adicionar seção" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Seção de Texto</SelectItem>
+                  <SelectItem value="image">Seção de Imagem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {document.sections.length === 0 ? (
+              <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground mb-4">
+                  Nenhuma seção adicionada ainda
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Use o botão acima para adicionar texto ou imagens
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {document.sections.map((section, index) => (
+                  <div key={section.id}>
+                    {section.type === 'text' ? (
+                      <TextSection
+                        section={section as TextSectionType}
+                        onChange={(updates) => handleUpdateSection(index, updates)}
+                        onDelete={() => handleDeleteSection(index)}
+                      />
+                    ) : (
+                      <ImageSection
+                        section={section as ImageSectionType}
+                        onChange={(updates) => handleUpdateSection(index, updates)}
+                        onDelete={() => handleDeleteSection(index)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {document.sections.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground mb-4">
-                Nenhuma seção adicionada ainda
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Use o botão acima para adicionar texto ou imagens
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {document.sections.map((section, index) => (
-                <div key={section.id}>
-                  {section.type === 'text' ? (
-                    <TextSection
-                      section={section as TextSectionType}
-                      onChange={(updates) => handleUpdateSection(index, updates)}
-                      onDelete={() => handleDeleteSection(index)}
-                    />
-                  ) : (
-                    <ImageSection
-                      section={section as ImageSectionType}
-                      onChange={(updates) => handleUpdateSection(index, updates)}
-                      onDelete={() => handleDeleteSection(index)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="hidden lg:block">
+            <DocumentPreview document={document} />
+          </div>
         </div>
       </main>
     </div>
